@@ -1,3 +1,5 @@
+using ApiEcommerce.Repository;
+using ApiEcommerce.Repository.IRepository;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +9,12 @@ var builder = WebApplication.CreateBuilder(args);
 var dbConnectionString = builder.Configuration.GetConnectionString("ConexionSql");
 
 builder.Services.AddDbContext<ApplicationDbContext>(option => option.UseSqlServer(dbConnectionString));
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddAutoMapper(cfg =>
+{
+    // Escanea todos los perfiles en el ensamblado de Program
+    cfg.AddMaps(typeof(Program).Assembly);
+});
 builder.Services.AddControllers();// permite agregar el servicio de controladores a la aplicacion
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer(); //permite describir automaticamente lo que son los endpoints definidos con minimal api
