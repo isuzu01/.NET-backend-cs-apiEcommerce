@@ -107,5 +107,30 @@ namespace ApiEcommerce.Controllers
             return NoContent();
         }
 
+        //Eliminar category
+        [HttpDelete("{id:int}", Name = "DeleteCategory")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult DeleteCategory(int id)
+        {
+            if (!_categoryRepository.CategoryExists(id))
+            {
+                return NotFound($"La categoria con el id {id} no existe");
+            }
+            var category = _categoryRepository.GetCategory(id);
+            if (category == null)
+            {
+                return NotFound($"La categoria con el id {id} no existe");
+            }
+            if (!_categoryRepository.DeleteCategory(category))
+            {
+                ModelState.AddModelError("CustomeError", $"Algo salió mal al eliminar el registro {category.Name}");
+                return StatusCode(500, ModelState);
+            }
+            return NoContent();
+        }
     }
 }
