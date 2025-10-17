@@ -50,7 +50,7 @@ namespace ApiEcommerce.Controllers
             var productDto = _mapper.Map<ProductDto>(product);
             return Ok(productDto);
         }
-        
+
         //Crear producto
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -83,6 +83,23 @@ namespace ApiEcommerce.Controllers
             var createdProduct = _productRepository.GetProduct(product.ProductId);
             var productoDto = _mapper.Map<ProductDto>(createdProduct);
             return CreatedAtRoute("GetProduct", new { productId = product.ProductId }, product);
+        }
+        
+        //product por categoria
+        [HttpGet("searchByCategory/{categoryId:int}", Name = "GetProductsForCategory")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult GetProductsForCategory(int categoryId)
+        {
+            var products = _productRepository.GetProductsForCategory(categoryId);
+            if (products.Count() == 0)
+            {
+                return NotFound($"Los productos con la categoria {categoryId} no existen");
+            }
+            var productsDto = _mapper.Map<List<ProductDto>>(products);
+            return Ok(productsDto);
         }
 
   }
