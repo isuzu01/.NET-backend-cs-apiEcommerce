@@ -10,6 +10,7 @@ var dbConnectionString = builder.Configuration.GetConnectionString("ConexionSql"
 
 builder.Services.AddDbContext<ApplicationDbContext>(option => option.UseSqlServer(dbConnectionString));
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddAutoMapper(cfg =>
 {
     // Escanea todos los perfiles en el ensamblado de Program
