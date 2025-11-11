@@ -11,7 +11,7 @@ namespace ApiEcommerce.Controllers
     [Route("api/[controller]")]
     [ApiController]
     public class ProductsController : ControllerBase
-  {
+    {
         private readonly IProductRepository _productRepository;
         private readonly ICategoryRepository _categoryRepository;
         private readonly IMapper _mapper;
@@ -84,9 +84,9 @@ namespace ApiEcommerce.Controllers
             var productoDto = _mapper.Map<ProductDto>(createdProduct);
             return CreatedAtRoute("GetProduct", new { productId = product.ProductId }, product);
         }
-        
+
         //product por categoria
-        [HttpGet("searchByCategory/{categoryId:int}", Name = "GetProductsForCategory")]
+        [HttpGet("searchProductByCategory/{categoryId:int}", Name = "GetProductsForCategory")]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -102,5 +102,21 @@ namespace ApiEcommerce.Controllers
             return Ok(productsDto);
         }
 
-  }
+        //product por nombre o descripcion
+        [HttpGet("searchProductByNameDescription/{searchTerm}", Name = "SearchProducts")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult SearchProducts(string searchTerm)
+        {
+            var products = _productRepository.SearchProducts(searchTerm);
+            if (products.Count() == 0)
+            {
+                return NotFound($"Los productos con el nombre o descripción {searchTerm} no existen");
+            }
+            var productsDto = _mapper.Map<List<ProductDto>>(products);
+            return Ok(productsDto);
+        }
+    }
 }
