@@ -146,7 +146,7 @@ namespace ApiEcommerce.Controllers
             return Ok($"Se compro {quantity} {units} del producto '{name}'");
 
         }
-        
+
         //
         [HttpPut("{productId:int}", Name = "UpdateProduct")]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -177,7 +177,32 @@ namespace ApiEcommerce.Controllers
                 ModelState.AddModelError("CustomeError", $"Algo salió mal al actualizar el registro {product.Name}");
                 return StatusCode(500, ModelState);
             }
-            
+
+            return NoContent();
+        }
+        
+        //eliminar producto
+        [HttpDelete("{productId:int}", Name = "DeleteProduct")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public IActionResult DeleteProduct(int productId)
+        {
+            if (productId == 0)
+            { 
+                return BadRequest(ModelState);
+            }
+            var product = _productRepository.GetProduct(productId);
+            if (product == null)
+            {
+                return NotFound($"El Producto con el id {productId} no existe");
+            }
+            if (!_productRepository.DeleteProduct(product))
+            {
+                ModelState.AddModelError("CustomeError", $"Algo salió mal al eliminar el registro {product.Name}");
+                return StatusCode(500, ModelState);
+            }
             return NoContent();
         }
     }
