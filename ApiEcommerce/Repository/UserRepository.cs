@@ -1,7 +1,11 @@
 using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using ApiEcommerce.Models;
 using ApiEcommerce.Models.Dtos;
 using ApiEcommerce.Repository.IRepository;
+using Microsoft.IdentityModel.Tokens;
 
 namespace ApiEcommerce.Repository;
 
@@ -9,10 +13,12 @@ public class UserRepository : IUserRepository
 {
 
   public readonly ApplicationDbContext _db;
+  private string secretKey;
 
-  public UserRepository( ApplicationDbContext db )
+  public UserRepository( ApplicationDbContext db, IConfiguration configuration )
   {
     _db = db;
+    secretKey = configuration.GetValue<string>("ApiSettings:SecretKey");
   }
 
   public User? GetUser(int id)
@@ -30,9 +36,70 @@ public class UserRepository : IUserRepository
     return !_db.Users.Any( u => u.Username.ToLower().Trim() == username.ToLower().Trim() );
   }
 
-  public Task<UserLoginResponseDto> Login(UserLoginDto userLogin)
+  public async Task<UserLoginResponseDto> Login(UserLoginDto userLogin)
   {
-    throw new NotImplementedException();
+    if(string.IsNullOrEmpty(userLogin.Username) )
+    {
+      return new UserLoginResponseDto()
+      {
+        Token = "",
+        User = null,
+        Message = "El Username es requerido"
+      };
+    }
+
+    var user = _db.Users.FirstOrDefault<User>(u => u.Username.ToLower().Trim() == userLogin.Username.ToLower().Trim());
+
+    if(user == null)
+    {
+      return new UserLoginResponseDto()
+      {
+        Token = "",
+        User = null,
+        Message = "Username no encontrado"
+      };
+    }
+
+    if(!BCrypt.Net.BCrypt.Verify(userLogin.Password, user.password))
+    {
+      return new UserLoginResponseDto()
+      {
+        Token = "",
+        User = null,
+        Message = "Password incorrecto"
+      };
+    }
+    //Jwt
+    var handlerToken = new JwtSecurityTokenHandler();
+    if(string.IsNullOrEmpty(secretKey))
+    {
+      throw new InvalidOperationException("Secret key no esta configurada");
+    }
+    var key = Encoding.UTF8.GetBytes(secretKey);
+    var tokenDescriptor = new SecurityTokenDescriptor
+    {
+      Subject = new ClaimsIdentity(new[]
+      {
+        new Claim("id", user.Id.ToString()),
+        new Claim("username", user.Username),
+        new Claim(ClaimTypes.Role, user.Role ?? "User")
+      }),
+      Expires = DateTime.UtcNow.AddHours(2),
+      SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+    };
+    var Token = handlerToken.CreateToken(tokenDescriptor);
+    return new UserLoginResponseDto()
+    {
+      Token = handlerToken.WriteToken(Token),
+      User = new UserRegisterDto()
+      {
+        Name = user.Name,
+        Username =  user.Username,
+        Role = user.Role,
+        password = user.password ?? ""
+      },
+      Message = "Usuario Logueado correctamente"
+    };
   }
 
   public async Task<User> Register(CreateUserDto createUser)
