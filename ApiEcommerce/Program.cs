@@ -98,6 +98,40 @@ builder.Services.AddSwaggerGen(
         new List<string>()
       }
     });
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+      Version = "v1",
+      Title = "API Ecommerce",
+      Description = "API para la gestion de productos y usuarios",
+      TermsOfService = new Uri("https://example.com/terms"),
+      Contact = new OpenApiContact
+      {
+        Name = "Equipo de Desarrollo",
+        Url = new Uri("https://example.com/contact")
+      },
+      License = new OpenApiLicense
+      {
+        Name = "Licencia de uso",
+        Url = new Uri("https://example.com/license")
+      }
+    });
+    options.SwaggerDoc("v2", new OpenApiInfo
+    {
+      Version = "v2",
+      Title = "API Ecommerce v2",
+      Description = "API para la gestion de productos y usuarios",
+      TermsOfService = new Uri("https://example.com/terms"),
+      Contact = new OpenApiContact
+      {
+        Name = "Equipo de Desarrollo",
+        Url = new Uri("https://example.com/contact")
+      },
+      License = new OpenApiLicense
+      {
+        Name = "Licencia de uso",
+        Url = new Uri("https://example.com/license")
+      }
+    });
   }
 ); //permite generar la documentacionde swager
 
@@ -106,7 +140,7 @@ var apiVersioningBuilder = builder.Services.AddApiVersioning(options =>
     options.AssumeDefaultVersionWhenUnspecified = true;
     options.DefaultApiVersion = new ApiVersion(1, 0);
     options.ReportApiVersions = true;
-    options.ApiVersionReader = ApiVersionReader.Combine(new QueryStringApiVersionReader("api-version"));
+    //options.ApiVersionReader = ApiVersionReader.Combine(new QueryStringApiVersionReader("api-version"));
 }); //habilita el versionamiento de la api
 
 apiVersioningBuilder.AddApiExplorer(options =>
@@ -133,7 +167,11 @@ var app = builder.Build(); //devuelve la intancia de una web aplication
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+        options.SwaggerEndpoint("/swagger/v2/swagger.json", "v2");
+    });
 }
 
 app.UseHttpsRedirection();
