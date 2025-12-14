@@ -22,6 +22,18 @@ builder.Services.AddControllers();// permite agregar el servicio de controladore
 builder.Services.AddEndpointsApiExplorer(); //permite describir automaticamente lo que son los endpoints definidos con minimal api
 builder.Services.AddSwaggerGen(); //permite generar la documentacionde swager
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin", 
+    builder =>
+    {
+        builder.WithOrigins("*")
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
+
+
 var app = builder.Build(); //devuelve la intancia de una web aplication
 
 // Configure the HTTP request pipeline.
@@ -32,6 +44,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+
+app.UseCors("AllowSpecificOrigin");
 
 app.UseAuthorization();
 
