@@ -5,6 +5,8 @@ using System.Text;
 using ApiEcommerce.Models;
 using ApiEcommerce.Models.Dtos;
 using ApiEcommerce.Repository.IRepository;
+using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -16,10 +18,20 @@ public class UserRepository : IUserRepository
   public readonly ApplicationDbContext _db;
   private string? secretKey;
 
-  public UserRepository( ApplicationDbContext db, IConfiguration configuration )
+  private readonly UserManager<ApplicationUser> _userManager;
+  private readonly RoleManager<IdentityRole> _roleManager;
+  private readonly IMapper _mapper;
+
+  public UserRepository( ApplicationDbContext db, 
+                          IConfiguration configuration, 
+                          UserManager<ApplicationUser> userManager, 
+                          RoleManager<IdentityRole> roleManager, IMapper mapper)
   {
     _db = db;
     secretKey = configuration.GetValue<string>("ApiSettings:SecretKey");
+    _userManager = userManager;
+    _roleManager = roleManager;
+    _mapper = mapper;
   }
 
   public User? GetUser(int id)
@@ -49,7 +61,7 @@ public class UserRepository : IUserRepository
       };
     }
 
-    var user = await _db.Users.FirstOrDefaultAsync<User>(u => u.Username.ToLower().Trim() == userLogin.Username.ToLower().Trim());
+    var user = await _db.ApplicationUsers.FirstOrDefaultAsync<ApplicationUser>(u => u.UserName != null && u.UserName.ToLower().Trim() == userLogin.Username.ToLower().Trim());
    
     if(user == null)
     {
@@ -60,8 +72,17 @@ public class UserRepository : IUserRepository
         Message = "Username no encontrado"
       };
     }
-
-    if(!BCrypt.Net.BCrypt.Verify(userLogin.Password, user.Password))
+    if(userLogin.Password == null)
+    {
+      return new UserLoginResponseDto()
+      {
+        Token = "",
+        User = null,
+        Message = "El password es requerido"
+      };
+    }
+    bool isValid =await _userManager.CheckPasswordAsync(user, userLogin.Password);
+    if(!isValid)
     {
       return new UserLoginResponseDto()
       {
@@ -76,14 +97,15 @@ public class UserRepository : IUserRepository
     {
       throw new InvalidOperationException("Secretkey no esta configurada");
     }
+    var roles = await _userManager.GetRolesAsync(user);
     var key = Encoding.UTF8.GetBytes(secretKey);
     var tokenDescriptor = new SecurityTokenDescriptor
     {
       Subject = new ClaimsIdentity(new[]
       {
         new Claim("id", user.Id.ToString()),
-        new Claim("username", user.Username),
-        new Claim(ClaimTypes.Role, user.Role ?? string.Empty)
+        new Claim("username", user.UserName ?? string.Empty),
+        new Claim(ClaimTypes.Role, roles.FirstOrDefault() ?? string.Empty)
       }),
       Expires = DateTime.UtcNow.AddHours(2),
       SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
