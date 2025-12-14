@@ -5,6 +5,7 @@ using System.Text;
 using ApiEcommerce.Models;
 using ApiEcommerce.Models.Dtos;
 using ApiEcommerce.Repository.IRepository;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ApiEcommerce.Repository;
@@ -13,7 +14,7 @@ public class UserRepository : IUserRepository
 {
 
   public readonly ApplicationDbContext _db;
-  private string secretKey = string.Empty;
+  private string? secretKey;
 
   public UserRepository( ApplicationDbContext db, IConfiguration configuration )
   {
@@ -48,8 +49,8 @@ public class UserRepository : IUserRepository
       };
     }
 
-    var user = _db.Users.FirstOrDefault<User>(u => u.Username.ToLower().Trim() == userLogin.Username.ToLower().Trim());
-
+    var user = await _db.Users.FirstOrDefaultAsync<User>(u => u.Username.ToLower().Trim() == userLogin.Username.ToLower().Trim());
+   
     if(user == null)
     {
       return new UserLoginResponseDto()
@@ -60,20 +61,20 @@ public class UserRepository : IUserRepository
       };
     }
 
-    if(!BCrypt.Net.BCrypt.Verify(userLogin.Password, user.password))
+    if(!BCrypt.Net.BCrypt.Verify(userLogin.Password, user.Password))
     {
       return new UserLoginResponseDto()
       {
         Token = "",
         User = null,
-        Message = "Password incorrecto"
+        Message = "Credenciales son incorrectas"
       };
     }
     //Jwt
     var handlerToken = new JwtSecurityTokenHandler();
-    if(string.IsNullOrEmpty(secretKey))
+    if(string.IsNullOrWhiteSpace(secretKey))
     {
-      throw new InvalidOperationException("Secret key no esta configurada");
+      throw new InvalidOperationException("Secretkey no esta configurada");
     }
     var key = Encoding.UTF8.GetBytes(secretKey);
     var tokenDescriptor = new SecurityTokenDescriptor
@@ -82,7 +83,7 @@ public class UserRepository : IUserRepository
       {
         new Claim("id", user.Id.ToString()),
         new Claim("username", user.Username),
-        new Claim(ClaimTypes.Role, user.Role ?? "User")
+        new Claim(ClaimTypes.Role, user.Role ?? string.Empty)
       }),
       Expires = DateTime.UtcNow.AddHours(2),
       SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -93,10 +94,10 @@ public class UserRepository : IUserRepository
       Token = handlerToken.WriteToken(Token),
       User = new UserRegisterDto()
       {
-        Name = user.Name,
         Username =  user.Username,
+        Name = user.Name,
         Role = user.Role,
-        password = user.password ?? ""
+        password = user.Password ?? ""
       },
       Message = "Usuario Logueado correctamente"
     };
@@ -110,7 +111,7 @@ public class UserRepository : IUserRepository
       Username = createUser.Username?? "No User Name",
       Name = createUser.Name,
       Role = createUser.Role,
-      password = encriptedPassword
+      Password = encriptedPassword
     };
     _db.Users.Add(user);
     await _db.SaveChangesAsync();

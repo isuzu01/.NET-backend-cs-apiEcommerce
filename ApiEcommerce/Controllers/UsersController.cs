@@ -48,12 +48,13 @@ namespace ApiEcommerce.Controllers
         return Ok(userDto);
     }
 
+    //Registrar usuario
     [HttpPost(Name = "RegisterUser")]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> Register([FromBody] CreateUserDto createUserDto)
+    public async Task<IActionResult> RegisterUser([FromBody] CreateUserDto createUserDto)
     {
         if ( createUserDto == null || !ModelState.IsValid )
         {
@@ -74,6 +75,27 @@ namespace ApiEcommerce.Controllers
         }
     
         return CreatedAtRoute("GetUser", new { id = result.Id }, result);
+    }
+
+    //Login usuario
+    [HttpPost("login", Name = "LoginUser")]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> LoginUser([FromBody] UserLoginDto userLoginDto)
+    {
+        if ( userLoginDto == null || !ModelState.IsValid )
+        {
+            return BadRequest( ModelState );
+        }
+        var user = await _userRepository.Login( userLoginDto );
+        if ( user == null )
+        {
+            return Unauthorized();
+        }
+    
+        return Ok(user);
     }
 
 
