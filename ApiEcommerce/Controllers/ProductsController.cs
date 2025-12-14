@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ApiEcommerce.Controllers
 {
     [Authorize(Roles = "Admin")]
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
     public class ProductsController : ControllerBase
     {
