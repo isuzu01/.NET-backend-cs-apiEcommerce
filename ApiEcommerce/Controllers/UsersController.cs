@@ -32,23 +32,23 @@ namespace ApiEcommerce.Controllers
     }
 
     //usuario por ID
-    [HttpGet("{userId:int}", Name = "GetUser")]
+    [HttpGet("{id:int}", Name = "GetUser")]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public IActionResult GetUser(int userId)
+    public IActionResult GetUser(int id)
     {
-        var user = _userRepository.GetUser(userId);
+        var user = _userRepository.GetUser(id);
         if (user == null)
         {
-            return NotFound($"El Usuario con el id {userId} no existe");
+            return NotFound($"El Usuario con el id {id} no existe");
         }
         var userDto = _mapper.Map<UserDto>(user);
         return Ok(userDto);
     }
 
-    
+
 
 
 
