@@ -3,6 +3,7 @@ using ApiEcommerce.Constants;
 using ApiEcommerce.Repository;
 using ApiEcommerce.Repository.IRepository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -14,6 +15,13 @@ var builder = WebApplication.CreateBuilder(args);
 var dbConnectionString = builder.Configuration.GetConnectionString("ConexionSql");
 
 builder.Services.AddDbContext<ApplicationDbContext>(option => option.UseSqlServer(dbConnectionString));
+
+builder.Services.AddResponseCaching(options =>
+{
+    options.MaximumBodySize = 1024 * 1024; // 1 MB
+    options.UseCaseSensitivePaths = true;
+});
+
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -49,7 +57,22 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddControllers();// permite agregar el servicio de controladores a la aplicacion
+builder.Services.AddControllers(option =>
+{
+    option.CacheProfiles.Add("Default10",
+      new CacheProfile()
+      {
+          Duration = 10
+      });
+
+    option.CacheProfiles.Add("Default20",
+      new CacheProfile()
+      {
+          Duration = 20
+      });
+}
+    
+);// permite agregar el servicio de controladores a la aplicacion
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer(); //permite describir automaticamente lo que son los endpoints definidos con minimal api
 builder.Services.AddSwaggerGen(
@@ -111,6 +134,9 @@ app.UseHttpsRedirection();
 
 app.UseCors(PolicyNames.AllowSpecificOrigin);
 
+app.UseResponseCaching();
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
