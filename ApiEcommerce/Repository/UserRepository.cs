@@ -119,18 +119,40 @@ public class UserRepository : IUserRepository
     };
   }
 
-  public async Task<User> Register(CreateUserDto createUser)
+  public async Task<UserDataDto> Register(CreateUserDto createUser)
   {
-    var encriptedPassword = BCrypt.Net.BCrypt.HashPassword(createUser.Password);
-    var user = new User
+    if(string.IsNullOrEmpty(createUser.Username) )
     {
-      Username = createUser.Username?? "No User Name",
+      throw new ArgumentException("El Username es requerido");
+    }
+
+    if(createUser.Password == null)
+    {
+      throw new ArgumentException("El Passwowrd es requerido");
+    }
+
+    var user = new ApplicationUser()
+    {
+      UserName = createUser.Username,
+      NormalizedEmail = createUser.Username.ToUpper(),
+      Email = createUser.Username,
       Name = createUser.Name,
-      Role = createUser.Role,
-      Password = encriptedPassword
     };
-    _db.Users.Add(user);
-    await _db.SaveChangesAsync();
-    return user;
+
+    var result = await _userManager.CreateAsync(user, createUser.Password);
+    if(!result.Succeeded)
+    {
+      var userRole = createUser.Role ?? "User";
+      var roleExists = await _roleManager.RoleExistsAsync(userRole);
+      if(!roleExists)
+      {
+        var identityRole = new IdentityRole(userRole);
+        await _roleManager.CreateAsync(identityRole);
+      }
+      await _userManager.AddToRoleAsync(user, userRole);
+      var createdUser = _db.ApplicationUsers.FirstOrDefault(u => u.UserName == createUser.Username);
+      return _mapper.Map<UserDataDto>(createdUser);
+    }
+    throw new ApplicationException("Error al registrar el usuario" );
   }
 }
