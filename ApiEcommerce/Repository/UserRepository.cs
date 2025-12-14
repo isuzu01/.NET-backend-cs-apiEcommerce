@@ -13,7 +13,7 @@ public class UserRepository : IUserRepository
 {
 
   public readonly ApplicationDbContext _db;
-  private string secretKey;
+  private string secretKey = string.Empty;
 
   public UserRepository( ApplicationDbContext db, IConfiguration configuration )
   {
