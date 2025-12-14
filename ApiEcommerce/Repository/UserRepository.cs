@@ -114,13 +114,7 @@ public class UserRepository : IUserRepository
     return new UserLoginResponseDto()
     {
       Token = handlerToken.WriteToken(Token),
-      User = new UserRegisterDto()
-      {
-        Username =  user.Username,
-        Name = user.Name,
-        Role = user.Role,
-        password = user.Password ?? ""
-      },
+      User = _mapper.Map<UserDataDto>(user),
       Message = "Usuario Logueado correctamente"
     };
   }
