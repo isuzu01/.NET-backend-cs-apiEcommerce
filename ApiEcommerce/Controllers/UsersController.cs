@@ -1,11 +1,13 @@
 using ApiEcommerce.Models.Dtos;
 using ApiEcommerce.Repository.IRepository;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ApiEcommerce.Controllers
 {
+    [Authorize(Roles = "Admin")]
     [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
@@ -49,6 +51,7 @@ namespace ApiEcommerce.Controllers
     }
 
     //Registrar usuario
+    [AllowAnonymous]
     [HttpPost(Name = "RegisterUser")]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -78,6 +81,7 @@ namespace ApiEcommerce.Controllers
     }
 
     //Login usuario
+    [AllowAnonymous]
     [HttpPost("login", Name = "LoginUser")]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
