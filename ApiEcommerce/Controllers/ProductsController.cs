@@ -85,27 +85,7 @@ namespace ApiEcommerce.Controllers
             //agregando imagen
             if(createProductDto.ImgUrl != null)
             {
-                string filename = product.ProductId + Guid.NewGuid().ToString() + Path.GetExtension(createProductDto.Image.FileName);
-                var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "ProductsImages");
-                
-                if(!Directory.Exists(imagesFolder))
-                {
-                    Directory.CreateDirectory(imagesFolder);
-                }
-                var filePath = Path.Combine(imagesFolder, filename);
-                FileInfo file = new FileInfo(filePath);
-
-                if(file.Exists)
-                {
-                    file.Delete();
-                }
-
-                using var fileStream = new FileStream(filePath, FileMode.Create);
-                createProductDto.Image.CopyTo(fileStream);
-
-                var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}{HttpContext.Request.PathBase.Value}";
-                product.ImgUrl = $"{baseUrl}/ProductsImages/{filename}";
-                product.ImgUrlLocal = filePath;
+               UploadProductImage(createProductDto, product);
             }
             else
             {
@@ -192,7 +172,7 @@ namespace ApiEcommerce.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult UpdateProduct(int productId, [FromBody] UpdateProductDto updateProductDto)
+        public IActionResult UpdateProduct(int productId, [FromForm] UpdateProductDto updateProductDto)
         {
             if (updateProductDto == null)
             {
@@ -213,30 +193,10 @@ namespace ApiEcommerce.Controllers
 
             //agregando imagen
             if(updateProductDto.ImgUrl != null)
-            {
-                string filename = product.ProductId + Guid.NewGuid().ToString() + Path.GetExtension(updateProductDto.Image.FileName);
-                var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "ProductsImages");
-                
-                if(!Directory.Exists(imagesFolder))
-                {
-                    Directory.CreateDirectory(imagesFolder);
-                }
-                var filePath = Path.Combine(imagesFolder, filename);
-                FileInfo file = new FileInfo(filePath);
-
-                if(file.Exists)
-                {
-                    file.Delete();
-                }
-
-                using var fileStream = new FileStream(filePath, FileMode.Create);
-                updateProductDto.Image.CopyTo(fileStream);
-
-                var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}{HttpContext.Request.PathBase.Value}";
-                product.ImgUrl = $"{baseUrl}/ProductsImages/{filename}";
-                product.ImgUrlLocal = filePath;
-            }
-            else
+      {
+        UploadProductImage(updateProductDto, product);
+      }
+      else
             {
                 product.ImgUrl = "https://placehold.co/300x300";
             }
@@ -250,9 +210,30 @@ namespace ApiEcommerce.Controllers
 
             return NoContent();
         }
-        
-        //eliminar producto
-        [HttpDelete("{productId:int}", Name = "DeleteProduct")]
+
+    private void UploadProductImage(dynamic productDto, Product product)
+    {
+      string fileName = product.ProductId + Guid.NewGuid().ToString() + Path.GetExtension(productDto.Image.FileName);
+      var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "ProductsImages");
+      if (!Directory.Exists(imagesFolder))
+      {
+        Directory.CreateDirectory(imagesFolder);
+      }
+      var filePath = Path.Combine(imagesFolder, fileName);
+      FileInfo file = new FileInfo(filePath);
+      if (file.Exists)
+      {
+        file.Delete();
+      }
+      using var fileStream = new FileStream(filePath, FileMode.Create);
+      productDto.Image.CopyTo(fileStream);
+      var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}{HttpContext.Request.PathBase.Value}";
+      product.ImgUrl = $"{baseUrl}/ProductsImages/{fileName}";
+      product.ImgUrlLocal = filePath;
+    }
+
+    //eliminar producto
+    [HttpDelete("{productId:int}", Name = "DeleteProduct")]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
