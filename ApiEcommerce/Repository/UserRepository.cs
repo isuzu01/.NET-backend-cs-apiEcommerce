@@ -123,24 +123,24 @@ public class UserRepository : IUserRepository
   {
     if(string.IsNullOrEmpty(createUser.Username) )
     {
-      throw new ArgumentException("El Username es requerido");
+      throw new ArgumentNullException("El Username es requerido");
     }
 
     if(createUser.Password == null)
     {
-      throw new ArgumentException("El Passwowrd es requerido");
+      throw new ArgumentNullException("El Passwowrd es requerido");
     }
 
     var user = new ApplicationUser()
     {
       UserName = createUser.Username,
-      NormalizedEmail = createUser.Username.ToUpper(),
       Email = createUser.Username,
+      NormalizedEmail = createUser.Username.ToUpper(),
       Name = createUser.Name,
     };
 
     var result = await _userManager.CreateAsync(user, createUser.Password);
-    if(!result.Succeeded)
+    if(result.Succeeded)
     {
       var userRole = createUser.Role ?? "User";
       var roleExists = await _roleManager.RoleExistsAsync(userRole);
@@ -153,6 +153,7 @@ public class UserRepository : IUserRepository
       var createdUser = _db.ApplicationUsers.FirstOrDefault(u => u.UserName == createUser.Username);
       return _mapper.Map<UserDataDto>(createdUser);
     }
-    throw new ApplicationException("Error al registrar el usuario" );
+    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+    throw new ApplicationException($"Error al registrar el usuario:  {errors}" );
   }
 }

@@ -37,7 +37,7 @@ namespace ApiEcommerce.Controllers
 
     //usuario por ID
     //[HttpGet("{id:int}", Name = "GetUser")]
-    [HttpGet("{int}", Name = "GetUser")]
+    [HttpGet("{id}", Name = "GetUser")]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
