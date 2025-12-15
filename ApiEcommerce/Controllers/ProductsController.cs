@@ -64,7 +64,7 @@ namespace ApiEcommerce.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult CreateProduct([FromBody] CreateProductDto createProductDto)
+        public IActionResult CreateProduct([FromForm] CreateProductDto createProductDto)
         {
             if (createProductDto == null)
             {
@@ -210,6 +210,38 @@ namespace ApiEcommerce.Controllers
             }
             var product = _mapper.Map<Product>(updateProductDto);
             product.ProductId = productId; //convertir la entidad dto en una entidad de dominio, que seria Product
+
+            //agregando imagen
+            if(updateProductDto.ImgUrl != null)
+            {
+                string filename = product.ProductId + Guid.NewGuid().ToString() + Path.GetExtension(updateProductDto.Image.FileName);
+                var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "ProductsImages");
+                
+                if(!Directory.Exists(imagesFolder))
+                {
+                    Directory.CreateDirectory(imagesFolder);
+                }
+                var filePath = Path.Combine(imagesFolder, filename);
+                FileInfo file = new FileInfo(filePath);
+
+                if(file.Exists)
+                {
+                    file.Delete();
+                }
+
+                using var fileStream = new FileStream(filePath, FileMode.Create);
+                updateProductDto.Image.CopyTo(fileStream);
+
+                var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}{HttpContext.Request.PathBase.Value}";
+                product.ImgUrl = $"{baseUrl}/ProductsImages/{filename}";
+                product.ImgUrlLocal = filePath;
+            }
+            else
+            {
+                product.ImgUrl = "https://placehold.co/300x300";
+            }
+            
+
             if (!_productRepository.UpdateProduct(product))
             {
                 ModelState.AddModelError("CustomeError", $"Algo salió mal al actualizar el registro {product.Name}");
